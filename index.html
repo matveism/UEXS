@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>mobile scanner · handwritten text reader</title>
+  <title>mobile scanner · digit-only OCR</title>
   <style>
     * {
       box-sizing: border-box;
@@ -272,7 +272,9 @@
       background:#f0f0f0;
       border-radius:4px;
       font-family: monospace;
-      font-size:16px;
+      font-size:24px;
+      font-weight:bold;
+      text-align:center;
       display: none;
     }
     
@@ -280,6 +282,12 @@
       margin-top:8px;
       font-family: monospace;
       color: #666;
+      text-align:center;
+    }
+    
+    .digit-highlight {
+      color: #4CAF50;
+      font-weight: bold;
     }
 
     .location-preview {
@@ -332,7 +340,6 @@
       background: #d8d8e2;
     }
 
-    /* wider keys for specials */
     .key-btn.wide-esc {
       flex: 1.2 1.2 0px;
       max-width: 70px;
@@ -362,7 +369,6 @@
       background: #c0c0d0;
     }
 
-    /* mode selector row */
     .mode-row {
       display: flex;
       justify-content: space-between;
@@ -393,7 +399,6 @@
       box-shadow: none;
     }
 
-    /* hide keypad sections */
     .keypad-section {
       display: none;
     }
@@ -401,7 +406,6 @@
       display: block;
     }
 
-    /* numeric specific */
     .num-row {
       display: flex;
       justify-content: center;
@@ -423,7 +427,6 @@
       font-size: 20px;
     }
 
-    /* symbol specific */
     .sym-main .keypad-row {
       gap: 4px;
     }
@@ -436,7 +439,7 @@
 <body>
 
 <div class="header">
-  <div class="left-text">HANDWRITTEN OCR</div>
+  <div class="left-text">DIGIT OCR SCANNER</div>
   <div class="header-right">
     <div class="gps-icon" id="gpsIndicator">
       <span>📍</span><span id="gpsStatus">acquiring</span>
@@ -448,15 +451,15 @@
 <!-- scrollable main content -->
 <div class="app-scroll">
   <div class="container">
-    <div class="label-title">SCAN HANDWRITTEN TEXT</div>
+    <div class="label-title">SCAN NUMBERS (7240, 1234, etc)</div>
     <div class="scan-row">
-      <button class="scan-btn" onclick="openOCRScanner()">📷 SCAN TEXT</button>
-      <input type="text" id="textField" class="barcode-input" placeholder="scan or enter" autocomplete="off" inputmode="none">
+      <button class="scan-btn" onclick="openOCRScanner()">📷 SCAN NUMBERS</button>
+      <input type="text" id="textField" class="barcode-input" placeholder="scan or enter digits" autocomplete="off" inputmode="numeric">
     </div>
 
     <div class="label-box">
       <div class="label-box-header">
-        <span># SCANNED TEXTS</span>
+        <span># SCANNED NUMBERS</span>
         <span class="label-counter" id="itemCounter">0</span>
       </div>
       <div class="scanned-items" id="scannedListContainer">
@@ -493,16 +496,14 @@
   </div>
 </div>
 
-<!-- ========== SINGLE TOGGLEABLE KEYPAD (ANDROID STYLE) ========== -->
+<!-- ========== SINGLE TOGGLEABLE KEYPAD ========== -->
 <div class="keypad-fixed">
-  <!-- mode switcher row -->
   <div class="mode-row">
     <div class="mode-btn" id="modeABC" data-mode="abc">ABC</div>
     <div class="mode-btn" id="mode123" data-mode="num">123</div>
     <div class="mode-btn" id="modeSYM" data-mode="sym">SYM</div>
   </div>
 
-  <!-- QWERTY section (default active) -->
   <div id="qwerty-section" class="keypad-section active">
     <div class="keypad-row">
       <button class="key-btn" data-key="Q">Q</button><button class="key-btn" data-key="W">W</button><button class="key-btn" data-key="E">E</button><button class="key-btn" data-key="R">R</button><button class="key-btn" data-key="T">T</button><button class="key-btn" data-key="Y">Y</button><button class="key-btn" data-key="U">U</button><button class="key-btn" data-key="I">I</button><button class="key-btn" data-key="O">O</button><button class="key-btn" data-key="P">P</button>
@@ -514,14 +515,12 @@
       <button class="key-btn wide-esc" data-key="esc">ESC</button>
       <button class="key-btn" data-key="Z">Z</button><button class="key-btn" data-key="X">X</button><button class="key-btn" data-key="C">C</button><button class="key-btn" data-key="V">V</button><button class="key-btn" data-key="B">B</button><button class="key-btn" data-key="N">N</button><button class="key-btn" data-key="M">M</button>
     </div>
-    <!-- space and enter row -->
     <div class="keypad-row">
       <button class="key-btn space" data-key="space">␣ space</button>
       <button class="key-btn enter-key" data-key="enter">ENT</button>
     </div>
   </div>
 
-  <!-- NUMERIC section -->
   <div id="num-section" class="keypad-section">
     <div class="num-row">
       <button class="key-btn" data-key="1">1</button><button class="key-btn" data-key="2">2</button><button class="key-btn" data-key="3">3</button>
@@ -542,7 +541,6 @@
     </div>
   </div>
 
-  <!-- SYMBOL section -->
   <div id="sym-section" class="keypad-section sym-main">
     <div class="keypad-row">
       <button class="key-btn" data-key="!">!</button><button class="key-btn" data-key="@">@</button><button class="key-btn" data-key="#">#</button><button class="key-btn" data-key="$">$</button><button class="key-btn" data-key="%">%</button><button class="key-btn" data-key="^">^</button><button class="key-btn" data-key="&">&</button><button class="key-btn" data-key="*">*</button><button class="key-btn" data-key="(">(</button><button class="key-btn" data-key=")">)</button>
@@ -582,7 +580,7 @@
 <div class="overlay" id="ocrOverlay">
   <div class="ocr-frame">
     <button class="close-btn" onclick="closeOCRScanner()">✕</button>
-    <div class="ocr-header">📷 SCAN HANDWRITTEN TEXT</div>
+    <div class="ocr-header">📷 SCAN NUMBERS ONLY</div>
     <video id="ocrVideo" autoplay playsinline></video>
     <button class="capture-btn" id="captureBtn">CAPTURE & RECOGNIZE</button>
     <div class="ocr-result" id="ocrResult"></div>
@@ -713,11 +711,21 @@
     itemCounter.innerText = scannedTexts.length;
   }
 
-  // ADD TEXT
+  // ADD TEXT - NOW ONLY ALLOWS DIGITS
   function addTextToList(text) {
     if (!text || text.trim() === '') return;
     text = text.trim();
-    scannedTexts.push(text);
+    
+    // FILTER OUT ANY NON-DIGIT CHARACTERS
+    // This ensures we only keep numbers 0-9
+    const digitsOnly = text.replace(/[^0-9]/g, '');
+    
+    if (digitsOnly.length === 0) {
+      alert('No numbers detected in the scanned text!');
+      return;
+    }
+    
+    scannedTexts.push(digitsOnly);
     playScanSound();
     renderScannedList();
     textField.value = '';
@@ -828,6 +836,12 @@
     ocrVideo.srcObject = null;
   };
 
+  // Function to clean OCR result - KEEP ONLY DIGITS
+  function extractDigits(text) {
+    // Remove any non-digit characters
+    return text.replace(/[^0-9]/g, '');
+  }
+
   // Capture and recognize text
   captureBtn.addEventListener('click', async function() {
     if (!ocrStream) return;
@@ -840,19 +854,39 @@
     canvas.width = ocrVideo.videoWidth;
     canvas.height = ocrVideo.videoHeight;
     const ctx = canvas.getContext('2d');
+    
+    // Apply image preprocessing for better digit recognition
     ctx.drawImage(ocrVideo, 0, 0, canvas.width, canvas.height);
     
+    // Convert to grayscale and increase contrast for better digit recognition
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    
+    // Simple contrast enhancement
+    for (let i = 0; i < data.length; i += 4) {
+      // Convert to grayscale
+      const gray = 0.3 * data[i] + 0.59 * data[i+1] + 0.11 * data[i+2];
+      // Increase contrast (threshold at 128)
+      const contrast = gray > 128 ? 255 : 0;
+      data[i] = data[i+1] = data[i+2] = contrast;
+    }
+    
+    ctx.putImageData(imageData, 0, 0);
+    
     // Get image data URL
-    const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    const imageDataUrl = canvas.toDataURL('image/jpeg', 0.9);
     
     try {
-      ocrProgress.innerText = 'Recognizing text... This may take a few seconds.';
+      ocrProgress.innerText = 'Recognizing numbers... This may take a few seconds.';
       
-      // Use Tesseract to recognize text
+      // Use Tesseract with specific configuration for digits only
       const { data: { text } } = await Tesseract.recognize(
         imageDataUrl,
         'eng',
         {
+          // Tesseract configuration for digits only
+          tessedit_char_whitelist: '0123456789',
+          tessedit_pageseg_mode: '6', // Treat as a single uniform block of text
           logger: m => {
             if (m.status === 'recognizing text') {
               ocrProgress.innerText = `Recognizing: ${Math.round(m.progress * 100)}%`;
@@ -861,25 +895,25 @@
         }
       );
       
-      const recognizedText = text.trim();
+      // Extract only digits from the recognized text
+      const digitsOnly = extractDigits(text);
       
-      if (recognizedText) {
-        ocrResult.innerText = `Recognized: ${recognizedText}`;
+      if (digitsOnly) {
+        ocrResult.innerText = `DETECTED: ${digitsOnly}`;
         ocrResult.style.display = 'block';
         
-        // Ask user if they want to use this text
-        if (confirm(`Add "${recognizedText}" to list?`)) {
-          addTextToList(recognizedText);
-          closeOCRScanner();
-        }
+        // Auto-add without asking since it's now digits only
+        addTextToList(digitsOnly);
+        closeOCRScanner();
       } else {
-        alert('No text recognized. Please try again with better lighting.');
-        ocrProgress.innerText = '';
+        ocrResult.innerText = 'No numbers detected!';
+        ocrResult.style.display = 'block';
+        ocrProgress.innerText = 'Try again with better lighting';
       }
       
     } catch (error) {
       console.error('OCR error:', error);
-      alert('Error recognizing text. Please try again.');
+      alert('Error recognizing numbers. Please try again.');
       ocrProgress.innerText = '';
     }
   });
@@ -974,9 +1008,9 @@
     const selectedStatus = batchStatusSelect.options[batchStatusSelect.selectedIndex]?.text;
     if (!selectedStatus || scannedTexts.length === 0) return;
 
-    const hasE = scannedTexts.some(text => text.toUpperCase().startsWith('E'));
+    const hasE = scannedTexts.some(text => text.toString().startsWith('E'));
     if (selectedStatus === 'UEXS DELIVERED' && hasE) {
-      const firstE = scannedTexts.find(text => text.toUpperCase().startsWith('E'));
+      const firstE = scannedTexts.find(text => text.toString().startsWith('E'));
       if (firstE) {
         currentTextForSignature = firstE;
         signatureBarcodeDisplay.innerText = firstE;
