@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>mobile scanner · fixed</title>
+  <style>
+    /* ----- YOUR EXACT STYLES (preserved) ----- */
+    body {
+      margin: 0;
+      background: lightblue;
+      font-family: Arial, sans-serif;
+    }
+
+    /* HEADER */
+    .header {
+      height: 48px;
+      background: #e6e6e9;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      border-bottom: 1px solid #c9c9cc;
+    }
+
+    .left-text {
+      font-family: "Courier New", monospace;
+      font-weight: 700;
+      font-size: 20px;
+    }
+
+    .right-info {
+      font-size: 18px;
+      font-weight: 600;
+      font-family: "Courier New", monospace;
+    }
+
+    /* MAIN BLOCK */
+    .container {
+      padding: 18px;
+    }
+
+    .label-title {
+      font-family: "Courier New", monospace;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    /* ROW: BUTTON + INPUT */
+    .scan-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .scan-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: lightgreen;
+      border: 1px solid #b8b8bb;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: "Courier New", monospace;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .barcode-input {
+      flex: 1;
+      padding: 10px;
+      font-size: 18px;
+      font-family: "Courier New", monospace;
+      border: 1px solid #b8b8bb;
+      border-radius: 6px;
+      background: lightgray;
+    }
+
+    /* STATUS DROPDOWN BLOCK */
+    .status-block {
+      margin-top: 20px;
+      display: none; /* hidden until scan */
+    }
+
+    .status-label {
+      font-family: "Courier New", monospace;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .status-select {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      font-family: "Courier New", monospace;
+      border: 1px solid #b8b8bb;
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    /* ----- ADDITIONAL NECESSARY STYLES (kept clean) ----- */
+    /* scanned list box – matches industrial look */
+    .label-box {
+      margin: 24px 0 12px;
+      border: 2px solid #b8b8bb;
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 12px 10px;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .label-box-header {
+      display: flex;
+      justify-content: space-between;
+      font-family: "Courier New", monospace;
+      font-weight: 700;
+      font-size: 18px;
+      border-bottom: 1px solid #c9c9cc;
+      padding-bottom: 6px;
+    }
+    .label-counter {
+      background: #e6e6e9;
+      padding: 0 12px;
+      border-radius: 20px;
+      color: #1e1e1e;
+    }
+    .scanned-items {
+      min-height: 80px;
+      max-height: 160px;
+      overflow-y: auto;
+      background: #f8f8fa;
+      border-radius: 4px;
+      margin: 10px 0 8px;
+      padding: 4px;
+      font-family: "Courier New", monospace;
+      font-size: 16px;
+      border: 1px solid #d2d2d5;
+    }
+    .scanned-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 0;
+      border-bottom: 1px dashed #c0c0c5;
+    }
+    .item-index {
+      color: #3a3a44;
+      min-width: 32px;
+    }
+    .item-barcode {
+      font-weight: 600;
+      word-break: break-word;
+    }
+    .empty-label {
+      color: #8e8e98;
+      text-align: center;
+      padding: 12px;
+    }
+
+    /* action buttons (ESC / ENTER) – matching your button style */
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 12px;
+    }
+    .action-btn {
+      background: #dcdce0;
+      border: 1px solid #b8b8bb;
+      border-radius: 6px;
+      padding: 8px 24px;
+      font-family: "Courier New", monospace;
+      font-weight: 700;
+      font-size: 18px;
+      cursor: pointer;
+      box-shadow: 0 1px 0 #a2a2a8;
+      transition: 0.04s;
+    }
+    .action-btn:active {
+      background: #c8c8d0;
+      transform: translateY(1px);
+      box-shadow: none;
+    }
+    .esc-btn { background: #f0d0d0; }
+    .enter-btn { background: #d0f0d0; }
+
+    /* GPS & time extension for header */
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .gps-icon {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: #d2d2d8;
+      padding: 4px 12px;
+      border-radius: 30px;
+      font-family: "Courier New", monospace;
+      font-size: 14px;
+      border: 1px solid #aaaab0;
+    }
+    #timeDisplay {
+      font-family: "Courier New", monospace;
+      font-size: 18px;
+      background: #d2d2d8;
+      padding: 4px 12px;
+      border-radius: 30px;
+      border: 1px solid #aaaab0;
+    }
+
+    /* signature popup (clean, like mobile overlay) */
+    .signature-overlay {
+      position: fixed; top:0; left:0; width:100%; height:100%;
+      background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center;
+      z-index: 2000;
+    }
+    .signature-container {
+      width:90%; max-width:400px; background:#fff; border-radius:16px; padding:20px;
+      border: 2px solid #b8b8bb; box-shadow: 0 6px 0 #8a8a92;
+    }
+    .signature-title { font-size:20px; font-weight:700; margin-bottom:6px; }
+    .signature-subtitle { color:#1e4d2b; font-weight:600; margin-bottom:12px; }
+    .signature-barcode { background:#eaeef2; padding:8px; border-radius:6px; font-family: monospace; }
+    .signature-canvas-container { background:#f0f4f8; border:2px solid #b8b8bb; border-radius:8px; height:150px; }
+    #signatureCanvas { width:100%; height:150px; background:#fff; cursor:crosshair; }
+    .signature-actions { display:flex; gap:8px; margin-top:16px; }
+    .signature-btn { flex:1; padding:10px; border:1px solid #b8b8bb; background:#dcdce0; border-radius:6px; font-weight:700; }
+
+    /* camera overlay */
+    .overlay {
+      position: fixed; top:0; left:0; width:100%; height:100%;
+      background:rgba(0,0,0,0.7); display:none; justify-content:center; align-items:center; z-index:1500;
+    }
+    .barcode-frame { width:300px; background:#000; border:4px solid #9bbc7b; border-radius:10px; overflow:hidden; }
+    .close-btn { position:absolute; top:-40px; right:0; background:#fff; border:1px solid #b8b8bb; padding:6px 12px; border-radius:6px; cursor:pointer; }
+    video { width:100%; height:auto; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER (now with GPS & time) -->
+<div class="header">
+  <div class="left-text">SCAN BARCODE</div>
+  <div class="header-right">
+    <div class="gps-icon" id="gpsIndicator">
+      <span></span><span id="gpsStatus">acquiring</span>
+    </div>
+    <div id="timeDisplay">--:--:--</div>
+  </div>
+</div>
+
+<!-- MAIN CONTAINER -->
+<div class="container">
+  <div class="label-title">SCAN barcode ID</div>
+  <div class="scan-row">
+    <button class="scan-btn" onclick="openScanner()">𝄃𝄃𝄂𝄂𝄀𝄁 SCAN</button>
+    <input type="text" id="barcodeField" class="barcode-input" placeholder="scan or enter" autocomplete="off">
+  </div>
+
+  <!-- LABEL ID BOX (scanned list) -->
+  <div class="label-box">
+    <div class="label-box-header">
+      <span># LABEL ID</span>
+      <span class="label-counter" id="itemCounter">0</span>
+    </div>
+    <div class="scanned-items" id="scannedListContainer">
+      <div class="empty-label">— no scans —</div>
+    </div>
+    <!-- ESC | ENTER buttons -->
+    <div class="action-buttons">
+      <button class="action-btn esc-btn" id="escBtn">ESC</button>
+      <button class="action-btn enter-btn" id="enterBtn">ENTER</button>
+    </div>
+  </div>
+
+  <!-- STATUS BLOCK (exactly your .status-block) -->
+  <div class="status-block" id="batchStatusBlock">
+    <div class="status-label">CHOOSE STATUS FOR ALL SCANNED PACKAGES</div>
+    <select class="status-select" id="batchStatusSelect">
+      <option value="">Select status...</option>
+      <option>Label Created</option>
+      <option>UEXS Awaitng Item</option>
+      <option>UEXS picked up</option>
+      <option>UEXS Departed Post Office</option>
+      <option>UEXS Arrived at Origin Hub</option>
+      <option>UEXS Departed Origin Hub</option>
+      <option>UEXS In Transit</option>
+      <option>UEXS Arrived Reginoal Hub</option>
+      <option>UEXS Processed thru Hub</option>
+      <option>UEXS Departed Hub</option>
+      <option>UEXS Arrived Local Hub</option>
+      <option>UEXS Sorted</option>
+      <option>UEXS Loaded On Delivery Vehicle</option>
+      <option>UEXS Out For Delivery</option>
+      <option>UEXS DELIVERED</option>
+    </select>
+  </div>
+</div>
+
+<!-- SIGNATURE POPUP -->
+<div id="signaturePopup" class="signature-overlay">
+  <div class="signature-container">
+    <div class="signature-title">SIGNATURE REQUIRED</div>
+    <div class="signature-subtitle">Delivered – Customer Sign</div>
+    <div id="signatureBarcodeDisplay" class="signature-barcode"></div>
+    <div class="signature-canvas-container"><canvas id="signatureCanvas" width="500" height="150"></canvas></div>
+    <div class="signature-actions">
+      <button id="clearSignatureBtn" class="signature-btn">CLEAR</button>
+      <button id="cancelSignatureBtn" class="signature-btn">CANCEL</button>
+      <button id="submitSignatureBtn" class="signature-btn">SUBMIT</button>
+    </div>
+  </div>
+</div>
+
+<!-- CAMERA OVERLAY -->
+<div class="overlay" id="scannerOverlay">
+  <div class="barcode-frame">
+    <button class="close-btn" onclick="closeScanner()">✕</button>
+    <video id="video" autoplay playsinline></video>
+  </div>
+</div>
+<script>
+  document.getElementById("gpsIndicator").style.display = "none";
+</script>
+
+<!-- ZXING + SOUND -->
+<script src="https://unpkg.com/@zxing/library@latest"></script>
+<script>
+(function() {
+  // ---------- BEEP (UPS style) ----------
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  function playScanSound() {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 920;
+    gain.gain.value = 0.5;
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.15);
+  }
+
+  // ---------- TIME & GPS ----------
+  function updateTime() {
+    const now = new Date();
+    let h = now.getHours().toString().padStart(2,'0');
+    let m = now.getMinutes().toString().padStart(2,'0');
+    let s = now.getSeconds().toString().padStart(2,'0');
+    document.getElementById('timeDisplay').innerText = `${h}:${m}:${s}`;
+  }
+  updateTime(); setInterval(updateTime, 1000);
+
+  const gpsStatus = document.getElementById('gpsStatus');
+  let currentLat = '', currentLon = '';
+  function updateGPS() {
+    if (!navigator.geolocation) { gpsStatus.innerText = 'no gps'; return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        currentLat = pos.coords.latitude.toFixed(5);
+        currentLon = pos.coords.longitude.toFixed(5);
+        gpsStatus.innerText = `${currentLat}, ${currentLon}`;
+      },
+      err => { gpsStatus.innerText = 'unavl'; },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+  updateGPS(); setInterval(updateGPS, 30000);
+
+  // ---------- GLOBAL DATA ----------
+  let scannedBarcodes = [];
+  const barcodeField = document.getElementById('barcodeField');
+  const scannedContainer = document.getElementById('scannedListContainer');
+  const itemCounter = document.getElementById('itemCounter');
+  const batchStatusBlock = document.getElementById('batchStatusBlock');
+  const batchStatusSelect = document.getElementById('batchStatusSelect');
+  const escBtn = document.getElementById('escBtn');
+  const enterBtn = document.getElementById('enterBtn');
+
+  // Signature
+  const signaturePopup = document.getElementById('signaturePopup');
+  const signatureCanvas = document.getElementById('signatureCanvas');
+  const signatureBarcodeDisplay = document.getElementById('signatureBarcodeDisplay');
+  let currentBarcodeForSignature = '';
+
+  // ZXING
+  let codeReader = new ZXing.BrowserMultiFormatReader();
+  let currentStream = null;
+
+  // ---------- RENDER SCANNED LIST ----------
+  function renderScannedList() {
+    const container = scannedContainer;
+    container.innerHTML = '';
+    if (scannedBarcodes.length === 0) {
+      container.innerHTML = '<div class="empty-label">— no scans —</div>';
+      itemCounter.innerText = '0';
+      return;
+    }
+    scannedBarcodes.forEach((bc, idx) => {
+      const div = document.createElement('div');
+      div.className = 'scanned-item';
+      div.innerHTML = `<span class="item-index">#${idx+1}</span><span class="item-barcode">${bc}</span>`;
+      container.appendChild(div);
+    });
+    itemCounter.innerText = scannedBarcodes.length;
+  }
+
+  // ---------- ADD BARCODE ----------
+  function addBarcodeToList(barcode) {
+    if (!barcode || barcode.trim() === '') return;
+    barcode = barcode.trim();
+    scannedBarcodes.push(barcode);
+    playScanSound();
+    renderScannedList();
+    barcodeField.value = '';
+    barcodeField.focus();
+    batchStatusBlock.style.display = 'none';
+    batchStatusSelect.value = '';
+  }
+
+  function processScannedInput(barcode) {
+    if (barcode) addBarcodeToList(barcode);
+  }
+
+  // manual ENTER
+  barcodeField.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      const val = barcodeField.value.trim();
+      if (val !== '') processScannedInput(val);
+    }
+  });
+
+  // ---------- SCANNER ----------
+  window.openScanner = async function() {
+    document.getElementById('scannerOverlay').style.display = 'flex';
+    try {
+      const video = document.getElementById('video');
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      currentStream = stream;
+      video.srcObject = stream;
+      codeReader.decodeFromVideoDevice(null, 'video', (result, err) => {
+        if (result) {
+          processScannedInput(result.text);
+          closeScanner();
+        }
+      });
+    } catch (err) {
+      alert('Camera access denied');
+      closeScanner();
+    }
+  };
+
+  window.closeScanner = function() {
+    document.getElementById('scannerOverlay').style.display = 'none';
+    if (currentStream) {
+      currentStream.getTracks().forEach(t => t.stop());
+      currentStream = null;
+    }
+    codeReader.reset();
+  };
+
+  // ---------- ESC ----------
+  escBtn.addEventListener('click', function() {
+    if (scannedBarcodes.length > 0 && confirm('Clear all scanned barcodes?')) {
+      scannedBarcodes = [];
+      renderScannedList();
+      batchStatusBlock.style.display = 'none';
+      batchStatusSelect.value = '';
+    }
+  });
+
+  // ---------- ENTER (show status) ----------
+  enterBtn.addEventListener('click', function() {
+    if (scannedBarcodes.length === 0) {
+      alert('No barcodes.');
+      return;
+    }
+    batchStatusBlock.style.display = 'block';
+  });
+
+  // ---------- STATUS CHANGE + signature trigger ----------
+  batchStatusSelect.addEventListener('change', function() {
+    const selectedStatus = batchStatusSelect.options[batchStatusSelect.selectedIndex]?.text;
+    if (!selectedStatus || scannedBarcodes.length === 0) return;
+
+    const hasE = scannedBarcodes.some(bc => bc.toUpperCase().startsWith('E'));
+    if (selectedStatus === 'UEXS DELIVERED' && hasE) {
+      const firstE = scannedBarcodes.find(bc => bc.toUpperCase().startsWith('E'));
+      if (firstE) {
+        currentBarcodeForSignature = firstE;
+        signatureBarcodeDisplay.innerText = firstE;
+        setupCanvas();
+        signaturePopup.style.display = 'flex';
+        return;
+      }
+    }
+    sendBatchToSheets(selectedStatus);
+  });
+
+  // ---------- SIGNATURE canvas ----------
+  function setupCanvas() {
+    const ctx = signatureCanvas.getContext('2d');
+    ctx.clearRect(0,0,500,150);
+    ctx.strokeStyle = '#aaa'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(30,110); ctx.lineTo(470,110); ctx.stroke();
+    ctx.strokeStyle = '#00117c'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+  }
+  let isDrawing = false, lastX, lastY;
+  function startDraw(e) {
+    isDrawing = true;
+    const rect = signatureCanvas.getBoundingClientRect();
+    const scaleX = 500/rect.width, scaleY = 150/rect.height;
+    const x = (e.clientX - rect.left)*scaleX, y = (e.clientY - rect.top)*scaleY;
+    lastX = x; lastY = y;
+  }
+  function draw(e) {
+    if (!isDrawing) return;
+    e.preventDefault();
+    const rect = signatureCanvas.getBoundingClientRect();
+    const scaleX = 500/rect.width, scaleY = 150/rect.height;
+    const x = (e.clientX - rect.left)*scaleX, y = (e.clientY - rect.top)*scaleY;
+    const ctx = signatureCanvas.getContext('2d');
+    ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(x, y); ctx.stroke();
+    lastX = x; lastY = y;
+  }
+  signatureCanvas.addEventListener('mousedown', startDraw);
+  signatureCanvas.addEventListener('mousemove', draw);
+  signatureCanvas.addEventListener('mouseup', ()=>{isDrawing=false});
+  signatureCanvas.addEventListener('mouseout', ()=>{isDrawing=false});
+  signatureCanvas.addEventListener('touchstart', (e)=>{e.preventDefault(); const t=e.touches[0]; startDraw(t);});
+  signatureCanvas.addEventListener('touchmove', (e)=>{e.preventDefault(); const t=e.touches[0]; draw(t);});
+  signatureCanvas.addEventListener('touchend', ()=>{isDrawing=false});
+
+  document.getElementById('clearSignatureBtn').addEventListener('click', ()=>{
+    const ctx = signatureCanvas.getContext('2d');
+    ctx.clearRect(0,0,500,150);
+    setupCanvas();
+  });
+  document.getElementById('cancelSignatureBtn').addEventListener('click', ()=>{
+    signaturePopup.style.display = 'none';
+    batchStatusSelect.value = '';
+  });
+  document.getElementById('submitSignatureBtn').addEventListener('click', ()=>{
+    const ctx = signatureCanvas.getContext('2d');
+    const pixels = ctx.getImageData(0,0,500,150).data;
+    let empty = true;
+    for (let i=0; i<pixels.length; i+=4) if (pixels[i] < 250) { empty=false; break; }
+    if (empty) { alert('Signature required.'); return; }
+    signaturePopup.style.display = 'none';
+    const selectedStatus = batchStatusSelect.options[batchStatusSelect.selectedIndex]?.text;
+    if (selectedStatus) sendBatchToSheets(selectedStatus);
+    else batchStatusBlock.style.display = 'none';
+  });
+
+  // ---------- SEND TO GOOGLE SHEETS (mock) ----------
+  function sendBatchToSheets(status) {
+    if (scannedBarcodes.length === 0) return;
+    const now = new Date().toISOString();
+    const location = currentLat ? `${currentLat},${currentLon}` : 'unknown';
+    console.log('📤 upload:', { timestamp: now, location, status, barcodes: scannedBarcodes });
+
+    alert(`✅ BATCH UPLOADED (${scannedBarcodes.length})\nStatus: ${status}\nGPS: ${location}`);
+
+    if (confirm('Clear scanned list?')) {
+      scannedBarcodes = [];
+      renderScannedList();
+      batchStatusBlock.style.display = 'none';
+      batchStatusSelect.value = '';
+    } else {
+      batchStatusBlock.style.display = 'none';
+      batchStatusSelect.value = '';
+    }
+  }
+
+  // ---------- INIT ----------
+  renderScannedList();
+  setupCanvas();
+
+  window.addEventListener('beforeunload', ()=>{
+    if (currentStream) currentStream.getTracks().forEach(t=>t.stop());
+  });
+})();
+</script>
+</body>
+</html>
