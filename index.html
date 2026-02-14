@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>mobile scanner · fixed</title>
+  <title>mobile scanner · live sheets</title>
   <style>
     /* ----- YOUR EXACT STYLES (preserved) ----- */
     body {
@@ -12,7 +12,6 @@
       font-family: Arial, sans-serif;
     }
 
-    /* HEADER */
     .header {
       height: 48px;
       background: #e6e6e9;
@@ -29,13 +28,33 @@
       font-size: 20px;
     }
 
-    .right-info {
-      font-size: 18px;
-      font-weight: 600;
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .gps-icon {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: #d2d2d8;
+      padding: 4px 12px;
+      border-radius: 30px;
       font-family: "Courier New", monospace;
+      font-size: 14px;
+      border: 1px solid #aaaab0;
+    }
+    
+    #timeDisplay {
+      font-family: "Courier New", monospace;
+      font-size: 18px;
+      background: #d2d2d8;
+      padding: 4px 12px;
+      border-radius: 30px;
+      border: 1px solid #aaaab0;
     }
 
-    /* MAIN BLOCK */
     .container {
       padding: 18px;
     }
@@ -47,7 +66,6 @@
       margin-bottom: 10px;
     }
 
-    /* ROW: BUTTON + INPUT */
     .scan-row {
       display: flex;
       align-items: center;
@@ -78,10 +96,89 @@
       background: lightgray;
     }
 
-    /* STATUS DROPDOWN BLOCK */
+    .label-box {
+      margin: 24px 0 12px;
+      border: 2px solid #b8b8bb;
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 12px 10px;
+    }
+    
+    .label-box-header {
+      display: flex;
+      justify-content: space-between;
+      font-family: "Courier New", monospace;
+      font-weight: 700;
+      font-size: 18px;
+      border-bottom: 1px solid #c9c9cc;
+      padding-bottom: 6px;
+    }
+    
+    .label-counter {
+      background: #e6e6e9;
+      padding: 0 12px;
+      border-radius: 20px;
+    }
+    
+    .scanned-items {
+      min-height: 80px;
+      max-height: 160px;
+      overflow-y: auto;
+      background: #f8f8fa;
+      border-radius: 4px;
+      margin: 10px 0 8px;
+      padding: 4px;
+      font-family: "Courier New", monospace;
+      border: 1px solid #d2d2d5;
+    }
+    
+    .scanned-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 0;
+      border-bottom: 1px dashed #c0c0c5;
+    }
+    
+    .item-index {
+      color: #3a3a44;
+      min-width: 32px;
+    }
+    
+    .item-barcode {
+      font-weight: 600;
+    }
+    
+    .empty-label {
+      color: #8e8e98;
+      text-align: center;
+      padding: 12px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 12px;
+    }
+    
+    .action-btn {
+      background: #dcdce0;
+      border: 1px solid #b8b8bb;
+      border-radius: 6px;
+      padding: 8px 24px;
+      font-family: "Courier New", monospace;
+      font-weight: 700;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    
+    .esc-btn { background: #f0d0d0; }
+    .enter-btn { background: #d0f0d0; }
+
     .status-block {
       margin-top: 20px;
-      display: none; /* hidden until scan */
+      display: none;
     }
 
     .status-label {
@@ -101,127 +198,17 @@
       background: #ffffff;
     }
 
-    /* ----- ADDITIONAL NECESSARY STYLES (kept clean) ----- */
-    /* scanned list box – matches industrial look */
-    .label-box {
-      margin: 24px 0 12px;
-      border: 2px solid #b8b8bb;
-      background: #ffffff;
-      border-radius: 8px;
-      padding: 12px 10px;
-      box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
-    }
-    .label-box-header {
-      display: flex;
-      justify-content: space-between;
-      font-family: "Courier New", monospace;
-      font-weight: 700;
-      font-size: 18px;
-      border-bottom: 1px solid #c9c9cc;
-      padding-bottom: 6px;
-    }
-    .label-counter {
-      background: #e6e6e9;
-      padding: 0 12px;
-      border-radius: 20px;
-      color: #1e1e1e;
-    }
-    .scanned-items {
-      min-height: 80px;
-      max-height: 160px;
-      overflow-y: auto;
-      background: #f8f8fa;
-      border-radius: 4px;
-      margin: 10px 0 8px;
-      padding: 4px;
-      font-family: "Courier New", monospace;
-      font-size: 16px;
-      border: 1px solid #d2d2d5;
-    }
-    .scanned-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 0;
-      border-bottom: 1px dashed #c0c0c5;
-    }
-    .item-index {
-      color: #3a3a44;
-      min-width: 32px;
-    }
-    .item-barcode {
-      font-weight: 600;
-      word-break: break-word;
-    }
-    .empty-label {
-      color: #8e8e98;
-      text-align: center;
-      padding: 12px;
-    }
-
-    /* action buttons (ESC / ENTER) – matching your button style */
-    .action-buttons {
-      display: flex;
-      gap: 12px;
-      justify-content: flex-end;
-      margin-top: 12px;
-    }
-    .action-btn {
-      background: #dcdce0;
-      border: 1px solid #b8b8bb;
-      border-radius: 6px;
-      padding: 8px 24px;
-      font-family: "Courier New", monospace;
-      font-weight: 700;
-      font-size: 18px;
-      cursor: pointer;
-      box-shadow: 0 1px 0 #a2a2a8;
-      transition: 0.04s;
-    }
-    .action-btn:active {
-      background: #c8c8d0;
-      transform: translateY(1px);
-      box-shadow: none;
-    }
-    .esc-btn { background: #f0d0d0; }
-    .enter-btn { background: #d0f0d0; }
-
-    /* GPS & time extension for header */
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-    .gps-icon {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      background: #d2d2d8;
-      padding: 4px 12px;
-      border-radius: 30px;
-      font-family: "Courier New", monospace;
-      font-size: 14px;
-      border: 1px solid #aaaab0;
-    }
-    #timeDisplay {
-      font-family: "Courier New", monospace;
-      font-size: 18px;
-      background: #d2d2d8;
-      padding: 4px 12px;
-      border-radius: 30px;
-      border: 1px solid #aaaab0;
-    }
-
-    /* signature popup (clean, like mobile overlay) */
     .signature-overlay {
       position: fixed; top:0; left:0; width:100%; height:100%;
       background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center;
       z-index: 2000;
     }
+    
     .signature-container {
       width:90%; max-width:400px; background:#fff; border-radius:16px; padding:20px;
-      border: 2px solid #b8b8bb; box-shadow: 0 6px 0 #8a8a92;
+      border: 2px solid #b8b8bb;
     }
+    
     .signature-title { font-size:20px; font-weight:700; margin-bottom:6px; }
     .signature-subtitle { color:#1e4d2b; font-weight:600; margin-bottom:12px; }
     .signature-barcode { background:#eaeef2; padding:8px; border-radius:6px; font-family: monospace; }
@@ -230,46 +217,52 @@
     .signature-actions { display:flex; gap:8px; margin-top:16px; }
     .signature-btn { flex:1; padding:10px; border:1px solid #b8b8bb; background:#dcdce0; border-radius:6px; font-weight:700; }
 
-    /* camera overlay */
     .overlay {
       position: fixed; top:0; left:0; width:100%; height:100%;
       background:rgba(0,0,0,0.7); display:none; justify-content:center; align-items:center; z-index:1500;
     }
-    .barcode-frame { width:300px; background:#000; border:4px solid #9bbc7b; border-radius:10px; overflow:hidden; }
-    .close-btn { position:absolute; top:-40px; right:0; background:#fff; border:1px solid #b8b8bb; padding:6px 12px; border-radius:6px; cursor:pointer; }
+    
+    .barcode-frame {
+      width:300px; background:#000; border:4px solid #9bbc7b; border-radius:10px; overflow:hidden;
+      position: relative;
+    }
+    
+    .close-btn {
+      position: absolute; top:-40px; right:0; background:#fff; border:1px solid #b8b8bb; 
+      padding:6px 12px; border-radius:6px; cursor:pointer;
+    }
+    
     video { width:100%; height:auto; }
 
-    /* location preview */
     .location-preview {
       font-family: monospace;
       font-size: 12px;
-      margin-top: 4px;
-      color: #1e4d2b;
+      margin-top: 8px;
+      padding: 4px;
+      background: #e6e6e9;
+      border-radius: 4px;
     }
   </style>
 </head>
 <body>
 
-<!-- HEADER (now with GPS & time) -->
 <div class="header">
   <div class="left-text">SCAN BARCODE</div>
   <div class="header-right">
     <div class="gps-icon" id="gpsIndicator">
-      <span></span><span id="gpsStatus">acquiring</span>
+      <span>📍</span><span id="gpsStatus">acquiring</span>
     </div>
     <div id="timeDisplay">--:--:--</div>
   </div>
 </div>
 
-<!-- MAIN CONTAINER -->
 <div class="container">
   <div class="label-title">SCAN barcode ID</div>
   <div class="scan-row">
-    <button class="scan-btn" onclick="openScanner()">𝄃𝄃𝄂𝄂𝄀𝄁 SCAN</button>
+    <button class="scan-btn" onclick="openScanner()">📷 SCAN</button>
     <input type="text" id="barcodeField" class="barcode-input" placeholder="scan or enter" autocomplete="off">
   </div>
 
-  <!-- LABEL ID BOX (scanned list) -->
   <div class="label-box">
     <div class="label-box-header">
       <span># LABEL ID</span>
@@ -278,14 +271,12 @@
     <div class="scanned-items" id="scannedListContainer">
       <div class="empty-label">— no scans —</div>
     </div>
-    <!-- ESC | ENTER buttons -->
     <div class="action-buttons">
       <button class="action-btn esc-btn" id="escBtn">ESC</button>
       <button class="action-btn enter-btn" id="enterBtn">ENTER</button>
     </div>
   </div>
 
-  <!-- STATUS BLOCK (exactly your .status-block) -->
   <div class="status-block" id="batchStatusBlock">
     <div class="status-label">CHOOSE STATUS FOR ALL SCANNED PACKAGES</div>
     <select class="status-select" id="batchStatusSelect">
@@ -310,7 +301,6 @@
   </div>
 </div>
 
-<!-- SIGNATURE POPUP -->
 <div id="signaturePopup" class="signature-overlay">
   <div class="signature-container">
     <div class="signature-title">SIGNATURE REQUIRED</div>
@@ -318,9 +308,6 @@
     <div id="signatureBarcodeDisplay" class="signature-barcode"></div>
     <div class="signature-canvas-container">
       <canvas id="signatureCanvas" width="500" height="150"></canvas>
-    </div>
-    <div style="margin: 8px 0; text-align: center; font-family: monospace;">
-      <span id="signatureTextPreview"></span>
     </div>
     <div class="signature-actions">
       <button id="clearSignatureBtn" class="signature-btn">CLEAR</button>
@@ -330,7 +317,6 @@
   </div>
 </div>
 
-<!-- CAMERA OVERLAY -->
 <div class="overlay" id="scannerOverlay">
   <div class="barcode-frame">
     <button class="close-btn" onclick="closeScanner()">✕</button>
@@ -338,11 +324,16 @@
   </div>
 </div>
 
-<!-- ZXING + SOUND + LOCATION + SIGNATURE -->
+<!-- ZXING + SOUND + SHEETDB INTEGRATION -->
 <script src="https://unpkg.com/@zxing/library@latest"></script>
 <script>
 (function() {
-  // ---------- BEEP (UPS style) ----------
+  // ============================================
+  // CONFIGURATION - REPLACE WITH YOUR SHEETDB URL
+  // ============================================
+  const SHEETDB_URL = 'https://sheetdb.io/api/v1/zw5qp6e3pdvsf'; // Get this from sheetdb.io
+  
+  // BEEP sound
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   function playScanSound() {
     if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -356,7 +347,7 @@
     osc.stop(audioCtx.currentTime + 0.15);
   }
 
-  // ---------- TIME & GPS ----------
+  // TIME
   function updateTime() {
     const now = new Date();
     let h = now.getHours().toString().padStart(2,'0');
@@ -366,25 +357,23 @@
   }
   updateTime(); setInterval(updateTime, 1000);
 
+  // GPS + REVERSE GEOCODING
   const gpsStatus = document.getElementById('gpsStatus');
   let currentLat = '', currentLon = '';
   let currentCity = '', currentState = '', currentZip = '';
   
-  // Reverse geocoding function
   async function getLocationDetails(lat, lon) {
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`
       );
       const data = await response.json();
-      
       return {
         city: data.address.city || data.address.town || data.address.village || data.address.suburb || '',
         state: data.address.state || '',
         zip: data.address.postcode || ''
       };
     } catch (error) {
-      console.log('Reverse geocoding failed:', error);
       return { city: '', state: '', zip: '' };
     }
   }
@@ -399,28 +388,24 @@
         currentLat = pos.coords.latitude.toFixed(5);
         currentLon = pos.coords.longitude.toFixed(5);
         
-        // Get location details
         const location = await getLocationDetails(currentLat, currentLon);
         currentCity = location.city;
         currentState = location.state;
         currentZip = location.zip;
         
         gpsStatus.innerText = `${currentLat}, ${currentLon}`;
-        
-        // Update location preview
-        const locationPreview = document.getElementById('locationPreview');
-        locationPreview.innerHTML = `📍 ${currentCity || '??'}, ${currentState || '??'} ${currentZip || '??'}`;
+        document.getElementById('locationPreview').innerHTML = 
+          `📍 ${currentCity || '??'}, ${currentState || '??'} ${currentZip || '??'}`;
       },
       err => { 
         gpsStatus.innerText = 'unavl';
-        currentLat = currentLon = '';
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
   }
   updateGPS(); setInterval(updateGPS, 30000);
 
-  // ---------- GLOBAL DATA ----------
+  // GLOBAL DATA
   let scannedBarcodes = [];
   const barcodeField = document.getElementById('barcodeField');
   const scannedContainer = document.getElementById('scannedListContainer');
@@ -429,20 +414,19 @@
   const batchStatusSelect = document.getElementById('batchStatusSelect');
   const escBtn = document.getElementById('escBtn');
   const enterBtn = document.getElementById('enterBtn');
-  const locationPreview = document.getElementById('locationPreview');
 
   // Signature
   const signaturePopup = document.getElementById('signaturePopup');
   const signatureCanvas = document.getElementById('signatureCanvas');
   const signatureBarcodeDisplay = document.getElementById('signatureBarcodeDisplay');
-  const signatureTextPreview = document.getElementById('signatureTextPreview');
   let currentBarcodeForSignature = '';
+  let currentSignatureText = '';
 
   // ZXING
   let codeReader = new ZXing.BrowserMultiFormatReader();
   let currentStream = null;
 
-  // ---------- RENDER SCANNED LIST ----------
+  // RENDER SCANNED LIST
   function renderScannedList() {
     const container = scannedContainer;
     container.innerHTML = '';
@@ -460,7 +444,7 @@
     itemCounter.innerText = scannedBarcodes.length;
   }
 
-  // ---------- ADD BARCODE ----------
+  // ADD BARCODE
   function addBarcodeToList(barcode) {
     if (!barcode || barcode.trim() === '') return;
     barcode = barcode.trim();
@@ -473,19 +457,14 @@
     batchStatusSelect.value = '';
   }
 
-  function processScannedInput(barcode) {
-    if (barcode) addBarcodeToList(barcode);
-  }
-
-  // manual ENTER
   barcodeField.addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
       const val = barcodeField.value.trim();
-      if (val !== '') processScannedInput(val);
+      if (val !== '') addBarcodeToList(val);
     }
   });
 
-  // ---------- SCANNER ----------
+  // SCANNER
   window.openScanner = async function() {
     document.getElementById('scannerOverlay').style.display = 'flex';
     try {
@@ -495,7 +474,7 @@
       video.srcObject = stream;
       codeReader.decodeFromVideoDevice(null, 'video', (result, err) => {
         if (result) {
-          processScannedInput(result.text);
+          addBarcodeToList(result.text);
           closeScanner();
         }
       });
@@ -514,18 +493,17 @@
     codeReader.reset();
   };
 
-  // ---------- ESC ----------
+  // ESC
   escBtn.addEventListener('click', function() {
     if (scannedBarcodes.length > 0 && confirm('Clear all scanned barcodes?')) {
       scannedBarcodes = [];
       renderScannedList();
       batchStatusBlock.style.display = 'none';
       batchStatusSelect.value = '';
-      locationPreview.innerHTML = '';
     }
   });
 
-  // ---------- ENTER (show status) ----------
+  // ENTER
   enterBtn.addEventListener('click', function() {
     if (scannedBarcodes.length === 0) {
       alert('No barcodes.');
@@ -534,40 +512,13 @@
     batchStatusBlock.style.display = 'block';
   });
 
-  // ---------- STATUS CHANGE + signature trigger ----------
-  batchStatusSelect.addEventListener('change', function() {
-    const selectedStatus = batchStatusSelect.options[batchStatusSelect.selectedIndex]?.text;
-    if (!selectedStatus || scannedBarcodes.length === 0) return;
-
-    const hasE = scannedBarcodes.some(bc => bc.toUpperCase().startsWith('E'));
-    if (selectedStatus === 'UEXS DELIVERED' && hasE) {
-      const firstE = scannedBarcodes.find(bc => bc.toUpperCase().startsWith('E'));
-      if (firstE) {
-        currentBarcodeForSignature = firstE;
-        signatureBarcodeDisplay.innerText = firstE;
-        setupCanvas();
-        signaturePopup.style.display = 'flex';
-        return;
-      }
-    }
-    // otherwise proceed to send batch
-    sendBatchToSheets(selectedStatus);
-  });
-
-  // ---------- SIGNATURE canvas ----------
+  // SIGNATURE CANVAS
   function setupCanvas() {
     const ctx = signatureCanvas.getContext('2d');
     ctx.clearRect(0,0,500,150);
-    ctx.strokeStyle = '#aaa'; 
-    ctx.lineWidth = 2;
-    ctx.beginPath(); 
-    ctx.moveTo(30,110); 
-    ctx.lineTo(470,110); 
-    ctx.stroke();
-    ctx.strokeStyle = '#00117c'; 
-    ctx.lineWidth = 2.5; 
-    ctx.lineCap = 'round';
-    signatureTextPreview.innerHTML = '';
+    ctx.strokeStyle = '#aaa'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(30,110); ctx.lineTo(470,110); ctx.stroke();
+    ctx.strokeStyle = '#00117c'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
   }
   
   let isDrawing = false, lastX, lastY;
@@ -587,10 +538,7 @@
     const scaleX = 500/rect.width, scaleY = 150/rect.height;
     const x = (e.clientX - rect.left)*scaleX, y = (e.clientY - rect.top)*scaleY;
     const ctx = signatureCanvas.getContext('2d');
-    ctx.beginPath(); 
-    ctx.moveTo(lastX, lastY); 
-    ctx.lineTo(x, y); 
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(x, y); ctx.stroke();
     lastX = x; lastY = y;
   }
   
@@ -606,7 +554,6 @@
     const ctx = signatureCanvas.getContext('2d');
     ctx.clearRect(0,0,500,150);
     setupCanvas();
-    signatureTextPreview.innerHTML = '';
   });
   
   document.getElementById('cancelSignatureBtn').addEventListener('click', ()=>{
@@ -614,37 +561,53 @@
     batchStatusSelect.value = '';
   });
   
-  document.getElementById('submitSignatureBtn').addEventListener('click', async ()=>{
+  document.getElementById('submitSignatureBtn').addEventListener('click', ()=>{
     const ctx = signatureCanvas.getContext('2d');
     const pixels = ctx.getImageData(0,0,500,150).data;
     let empty = true;
     for (let i=0; i<pixels.length; i+=4) if (pixels[i] < 250) { empty=false; break; }
     if (empty) { alert('Please draw signature.'); return; }
     
-    // Convert signature to text (simple prompt for demo - in production use OCR)
-    const signatureName = prompt("Enter recipient name for signature:", "");
-    if (!signatureName) {
-      alert('Name is required for signature.');
-      return;
-    }
+    const name = prompt("Enter recipient name:", "");
+    if (!name) return;
     
-    signatureTextPreview.innerHTML = `✓ Signature: ${signatureName}`;
-    
+    currentSignatureText = name;
     signaturePopup.style.display = 'none';
+    
     const selectedStatus = batchStatusSelect.options[batchStatusSelect.selectedIndex]?.text;
-    if (selectedStatus) sendBatchToSheets(selectedStatus, signatureName);
-    else batchStatusBlock.style.display = 'none';
+    if (selectedStatus) sendBatchToSheets(selectedStatus);
   });
 
-  // ---------- SEND TO GOOGLE SHEETS (CSV format) ----------
-  async function sendBatchToSheets(status, signatureText = '') {
+  // STATUS CHANGE
+  batchStatusSelect.addEventListener('change', function() {
+    const selectedStatus = batchStatusSelect.options[batchStatusSelect.selectedIndex]?.text;
+    if (!selectedStatus || scannedBarcodes.length === 0) return;
+
+    const hasE = scannedBarcodes.some(bc => bc.toUpperCase().startsWith('E'));
+    if (selectedStatus === 'UEXS DELIVERED' && hasE) {
+      const firstE = scannedBarcodes.find(bc => bc.toUpperCase().startsWith('E'));
+      if (firstE) {
+        currentBarcodeForSignature = firstE;
+        signatureBarcodeDisplay.innerText = firstE;
+        setupCanvas();
+        signaturePopup.style.display = 'flex';
+        return;
+      }
+    }
+    sendBatchToSheets(selectedStatus);
+  });
+
+  // ============================================
+  // SEND TO SHEETDB (REAL DATABASE)
+  // ============================================
+  async function sendBatchToSheets(status) {
     if (scannedBarcodes.length === 0) return;
     
     const timestamp = new Date().toISOString().slice(0,19).replace('T',' ');
     const batchId = 'BATCH-' + Date.now().toString(36).toUpperCase();
     
-    // Prepare records in your exact table format
-    const records = scannedBarcodes.map((barcode, index) => ({
+    // Prepare data in your exact table format
+    const records = scannedBarcodes.map(barcode => ({
       tracking_id: barcode,
       status: status,
       timestamp: timestamp,
@@ -653,49 +616,57 @@
       city: currentCity || '',
       state: currentState || '',
       zip_code: currentZip || '',
-      signature_text: (status === 'UEXS DELIVERED' && signatureText) ? signatureText : '',
+      signature_text: (status === 'UEXS DELIVERED' && currentSignatureText) ? currentSignatureText : '',
       batch_id: batchId
     }));
 
-    // Create CSV content
-    const headers = ['tracking_id','status','timestamp','latitude','longitude','city','state','zip_code','signature_text','batch_id'];
-    const csvRows = [];
-    csvRows.push(headers.join(','));
-    
-    for (const record of records) {
-      const values = headers.map(header => {
-        const val = record[header] || '';
-        return `"${val.replace(/"/g, '""')}"`; // Escape quotes
+    // Show sending status
+    const originalBtnText = enterBtn.innerText;
+    enterBtn.innerText = 'SENDING...';
+    enterBtn.disabled = true;
+
+    try {
+      // Send ALL records at once to SheetDB
+      const response = await fetch(SHEETDB_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(records)
       });
-      csvRows.push(values.join(','));
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        alert(`✅ SUCCESS!\n${records.length} records sent to Google Sheets\nBatch ID: ${batchId}`);
+        
+        // Clear the list after successful send
+        scannedBarcodes = [];
+        renderScannedList();
+        batchStatusBlock.style.display = 'none';
+        batchStatusSelect.value = '';
+        currentSignatureText = '';
+        
+        console.log('SheetDB response:', result);
+      } else {
+        throw new Error('Failed to send');
+      }
+      
+    } catch (error) {
+      alert('❌ Error sending to database. Check console.');
+      console.error('SheetDB error:', error);
+      
+      // Save locally as backup
+      const backup = JSON.stringify(records, null, 2);
+      console.log('BACKUP DATA:', backup);
+      
+    } finally {
+      enterBtn.innerText = originalBtnText;
+      enterBtn.disabled = false;
     }
-    
-    const csvContent = csvRows.join('\n');
-    
-    // Log to console (in production, send to your Google Sheets via CSV endpoint)
-    console.log('📤 CSV DATA:');
-    console.log(csvContent);
-    
-    // Create download link for testing
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `tracking_${batchId}.csv`;
-    a.click();
-    
-    // Show summary
-    alert(`✅ BATCH SUBMITTED\nBatch: ${batchId}\nRecords: ${records.length}\nStatus: ${status}\n\nCSV file downloaded for Google Sheets import.`);
-    
-    // Clear list
-    scannedBarcodes = [];
-    renderScannedList();
-    batchStatusBlock.style.display = 'none';
-    batchStatusSelect.value = '';
-    locationPreview.innerHTML = '';
   }
 
-  // ---------- INIT ----------
+  // INIT
   renderScannedList();
   setupCanvas();
 })();
