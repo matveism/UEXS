@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>mobile scanner · live sheets</title>
+  <title>mobile scanner · handwritten text reader</title>
   <style>
     * {
       box-sizing: border-box;
@@ -238,17 +238,49 @@
       background:rgba(0,0,0,0.7); display:none; justify-content:center; align-items:center; z-index:1500;
     }
     
-    .barcode-frame {
-      width:300px; background:#000; border:4px solid #9bbc7b; border-radius:10px; overflow:hidden;
-      position: relative;
+    .ocr-frame {
+      width:90%; max-width:400px; background:#fff; border:4px solid #9bbc7b; border-radius:10px; overflow:hidden;
+      position: relative; padding:16px;
     }
     
     .close-btn {
-      position: absolute; top:-40px; right:0; background:#fff; border:1px solid #b8b8bb; 
-      padding:6px 12px; border-radius:6px; cursor:pointer;
+      position: absolute; top:5px; right:10px; background:#fff; border:1px solid #b8b8bb; 
+      padding:6px 12px; border-radius:6px; cursor:pointer; z-index:10;
     }
     
-    video { width:100%; height:auto; }
+    .ocr-header {
+      font-family: "Courier New", monospace;
+      font-weight: 700;
+      font-size: 18px;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    
+    #ocrVideo {
+      width:100%; height:auto; border:2px solid #aaa; border-radius:6px;
+    }
+    
+    .capture-btn {
+      width:100%; padding:12px; margin-top:12px; 
+      background:#4CAF50; color:white; font-size:18px;
+      border:none; border-radius:6px; cursor:pointer;
+    }
+    
+    .ocr-result {
+      margin-top:12px;
+      padding:10px;
+      background:#f0f0f0;
+      border-radius:4px;
+      font-family: monospace;
+      font-size:16px;
+      display: none;
+    }
+    
+    .ocr-progress {
+      margin-top:8px;
+      font-family: monospace;
+      color: #666;
+    }
 
     .location-preview {
       font-family: monospace;
@@ -330,7 +362,7 @@
       background: #c0c0d0;
     }
 
-    /* mode selector row (123 | SYM | space ... ) */
+    /* mode selector row */
     .mode-row {
       display: flex;
       justify-content: space-between;
@@ -404,7 +436,7 @@
 <body>
 
 <div class="header">
-  <div class="left-text">SCAN BARCODE</div>
+  <div class="left-text">HANDWRITTEN OCR</div>
   <div class="header-right">
     <div class="gps-icon" id="gpsIndicator">
       <span>📍</span><span id="gpsStatus">acquiring</span>
@@ -416,15 +448,15 @@
 <!-- scrollable main content -->
 <div class="app-scroll">
   <div class="container">
-    <div class="label-title">SCAN barcode ID</div>
+    <div class="label-title">SCAN HANDWRITTEN TEXT</div>
     <div class="scan-row">
-      <button class="scan-btn" onclick="openScanner()">📷 SCAN</button>
-      <input type="text" id="barcodeField" class="barcode-input" placeholder="scan or enter" autocomplete="off" inputmode="none">
+      <button class="scan-btn" onclick="openOCRScanner()">📷 SCAN TEXT</button>
+      <input type="text" id="textField" class="barcode-input" placeholder="scan or enter" autocomplete="off" inputmode="none">
     </div>
 
     <div class="label-box">
       <div class="label-box-header">
-        <span># LABEL ID</span>
+        <span># SCANNED TEXTS</span>
         <span class="label-counter" id="itemCounter">0</span>
       </div>
       <div class="scanned-items" id="scannedListContainer">
@@ -463,7 +495,7 @@
 
 <!-- ========== SINGLE TOGGLEABLE KEYPAD (ANDROID STYLE) ========== -->
 <div class="keypad-fixed">
-  <!-- mode switcher row: 123 | SYM | space (but space is actual key) we need ABC mode too, so better: ABC 123 SYM as mode toggles -->
+  <!-- mode switcher row -->
   <div class="mode-row">
     <div class="mode-btn" id="modeABC" data-mode="abc">ABC</div>
     <div class="mode-btn" id="mode123" data-mode="num">123</div>
@@ -546,14 +578,19 @@
   </div>
 </div>
 
-<div class="overlay" id="scannerOverlay">
-  <div class="barcode-frame">
-    <button class="close-btn" onclick="closeScanner()">✕</button>
-    <video id="video" autoplay playsinline></video>
+<!-- OCR Scanner Overlay -->
+<div class="overlay" id="ocrOverlay">
+  <div class="ocr-frame">
+    <button class="close-btn" onclick="closeOCRScanner()">✕</button>
+    <div class="ocr-header">📷 SCAN HANDWRITTEN TEXT</div>
+    <video id="ocrVideo" autoplay playsinline></video>
+    <button class="capture-btn" id="captureBtn">CAPTURE & RECOGNIZE</button>
+    <div class="ocr-result" id="ocrResult"></div>
+    <div class="ocr-progress" id="ocrProgress"></div>
   </div>
 </div>
 
-<script src="https://unpkg.com/@zxing/library@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script>
 (function() {
   // ============================================
@@ -634,8 +671,8 @@
   updateGPS(); setInterval(updateGPS, 30000);
 
   // GLOBAL DATA
-  let scannedBarcodes = [];
-  const barcodeField = document.getElementById('barcodeField');
+  let scannedTexts = [];
+  const textField = document.getElementById('textField');
   const scannedContainer = document.getElementById('scannedListContainer');
   const itemCounter = document.getElementById('itemCounter');
   const batchStatusBlock = document.getElementById('batchStatusBlock');
@@ -647,59 +684,61 @@
   const signaturePopup = document.getElementById('signaturePopup');
   const signatureCanvas = document.getElementById('signatureCanvas');
   const signatureBarcodeDisplay = document.getElementById('signatureBarcodeDisplay');
-  let currentBarcodeForSignature = '';
+  let currentTextForSignature = '';
   let currentSignatureText = '';
 
-  // ZXING
-  let codeReader = new ZXing.BrowserMultiFormatReader();
-  let currentStream = null;
+  // OCR variables
+  const ocrOverlay = document.getElementById('ocrOverlay');
+  const ocrVideo = document.getElementById('ocrVideo');
+  const captureBtn = document.getElementById('captureBtn');
+  const ocrResult = document.getElementById('ocrResult');
+  const ocrProgress = document.getElementById('ocrProgress');
+  let ocrStream = null;
 
   // RENDER SCANNED LIST
   function renderScannedList() {
     const container = scannedContainer;
     container.innerHTML = '';
-    if (scannedBarcodes.length === 0) {
+    if (scannedTexts.length === 0) {
       container.innerHTML = '<div class="empty-label">— no scans —</div>';
       itemCounter.innerText = '0';
       return;
     }
-    scannedBarcodes.forEach((bc, idx) => {
+    scannedTexts.forEach((text, idx) => {
       const div = document.createElement('div');
       div.className = 'scanned-item';
-      div.innerHTML = `<span class="item-index">#${idx+1}</span><span class="item-barcode">${bc}</span>`;
+      div.innerHTML = `<span class="item-index">#${idx+1}</span><span class="item-barcode">${text}</span>`;
       container.appendChild(div);
     });
-    itemCounter.innerText = scannedBarcodes.length;
+    itemCounter.innerText = scannedTexts.length;
   }
 
-  // ADD BARCODE
-  function addBarcodeToList(barcode) {
-    if (!barcode || barcode.trim() === '') return;
-    barcode = barcode.trim();
-    scannedBarcodes.push(barcode);
+  // ADD TEXT
+  function addTextToList(text) {
+    if (!text || text.trim() === '') return;
+    text = text.trim();
+    scannedTexts.push(text);
     playScanSound();
     renderScannedList();
-    barcodeField.value = '';
-    barcodeField.focus();
+    textField.value = '';
+    textField.focus();
     batchStatusBlock.style.display = 'none';
     batchStatusSelect.value = '';
   }
 
   // manual entry from keypad
   function simulateKeyPress(key) {
-    const input = barcodeField;
+    const input = textField;
     if (key === 'space') {
       input.value += ' ';
     } else if (key === 'backspace') {
       input.value = input.value.slice(0, -1);
     } else if (key === 'enter') {
       const val = input.value.trim();
-      if (val !== '') addBarcodeToList(val);
+      if (val !== '') addTextToList(val);
     } else if (key === 'esc') {
-      // optional clear field?
       input.value = '';
     } else if (key === 'abc' || key === 'sym' || key === '123') {
-      // these are mode toggles, handled separately
       return;
     } else {
       input.value += key;
@@ -743,7 +782,6 @@
   mode123.addEventListener('click', () => setActiveMode('num'));
   modeSYM.addEventListener('click', () => setActiveMode('sym'));
 
-  // also handle any "ABC" or "SYM" keys inside numeric keypad (they toggle mode)
   document.addEventListener('click', (e) => {
     const target = e.target;
     if (target.classList.contains('key-btn') && target.dataset.key === 'abc') {
@@ -756,46 +794,100 @@
   });
 
   // hardware keyboard support
-  barcodeField.addEventListener('keypress', function(e) {
+  textField.addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
-      const val = barcodeField.value.trim();
-      if (val !== '') addBarcodeToList(val);
+      const val = textField.value.trim();
+      if (val !== '') addTextToList(val);
     }
   });
 
-  // SCANNER
-  window.openScanner = async function() {
-    document.getElementById('scannerOverlay').style.display = 'flex';
+  // OCR SCANNER
+  window.openOCRScanner = async function() {
+    ocrOverlay.style.display = 'flex';
+    ocrResult.style.display = 'none';
+    ocrProgress.innerText = '';
+    
     try {
-      const video = document.getElementById('video');
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      currentStream = stream;
-      video.srcObject = stream;
-      codeReader.decodeFromVideoDevice(null, 'video', (result, err) => {
-        if (result) {
-          addBarcodeToList(result.text);
-          closeScanner();
-        }
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
       });
+      ocrStream = stream;
+      ocrVideo.srcObject = stream;
     } catch (err) {
       alert('Camera access denied');
-      closeScanner();
+      closeOCRScanner();
     }
   };
 
-  window.closeScanner = function() {
-    document.getElementById('scannerOverlay').style.display = 'none';
-    if (currentStream) {
-      currentStream.getTracks().forEach(t => t.stop());
-      currentStream = null;
+  window.closeOCRScanner = function() {
+    ocrOverlay.style.display = 'none';
+    if (ocrStream) {
+      ocrStream.getTracks().forEach(t => t.stop());
+      ocrStream = null;
     }
-    codeReader.reset();
+    ocrVideo.srcObject = null;
   };
+
+  // Capture and recognize text
+  captureBtn.addEventListener('click', async function() {
+    if (!ocrStream) return;
+    
+    ocrProgress.innerText = 'Processing image...';
+    ocrResult.style.display = 'none';
+    
+    // Create a canvas to capture the video frame
+    const canvas = document.createElement('canvas');
+    canvas.width = ocrVideo.videoWidth;
+    canvas.height = ocrVideo.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(ocrVideo, 0, 0, canvas.width, canvas.height);
+    
+    // Get image data URL
+    const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    
+    try {
+      ocrProgress.innerText = 'Recognizing text... This may take a few seconds.';
+      
+      // Use Tesseract to recognize text
+      const { data: { text } } = await Tesseract.recognize(
+        imageDataUrl,
+        'eng',
+        {
+          logger: m => {
+            if (m.status === 'recognizing text') {
+              ocrProgress.innerText = `Recognizing: ${Math.round(m.progress * 100)}%`;
+            }
+          }
+        }
+      );
+      
+      const recognizedText = text.trim();
+      
+      if (recognizedText) {
+        ocrResult.innerText = `Recognized: ${recognizedText}`;
+        ocrResult.style.display = 'block';
+        
+        // Ask user if they want to use this text
+        if (confirm(`Add "${recognizedText}" to list?`)) {
+          addTextToList(recognizedText);
+          closeOCRScanner();
+        }
+      } else {
+        alert('No text recognized. Please try again with better lighting.');
+        ocrProgress.innerText = '';
+      }
+      
+    } catch (error) {
+      console.error('OCR error:', error);
+      alert('Error recognizing text. Please try again.');
+      ocrProgress.innerText = '';
+    }
+  });
 
   // ESC
   escBtn.addEventListener('click', function() {
-    if (scannedBarcodes.length > 0 && confirm('Clear all scanned barcodes?')) {
-      scannedBarcodes = [];
+    if (scannedTexts.length > 0 && confirm('Clear all scanned texts?')) {
+      scannedTexts = [];
       renderScannedList();
       batchStatusBlock.style.display = 'none';
       batchStatusSelect.value = '';
@@ -804,8 +896,8 @@
 
   // ENTER (show status dropdown)
   enterBtn.addEventListener('click', function() {
-    if (scannedBarcodes.length === 0) {
-      alert('No barcodes.');
+    if (scannedTexts.length === 0) {
+      alert('No texts scanned.');
       return;
     }
     batchStatusBlock.style.display = 'block';
@@ -880,13 +972,13 @@
   // STATUS CHANGE
   batchStatusSelect.addEventListener('change', function() {
     const selectedStatus = batchStatusSelect.options[batchStatusSelect.selectedIndex]?.text;
-    if (!selectedStatus || scannedBarcodes.length === 0) return;
+    if (!selectedStatus || scannedTexts.length === 0) return;
 
-    const hasE = scannedBarcodes.some(bc => bc.toUpperCase().startsWith('E'));
+    const hasE = scannedTexts.some(text => text.toUpperCase().startsWith('E'));
     if (selectedStatus === 'UEXS DELIVERED' && hasE) {
-      const firstE = scannedBarcodes.find(bc => bc.toUpperCase().startsWith('E'));
+      const firstE = scannedTexts.find(text => text.toUpperCase().startsWith('E'));
       if (firstE) {
-        currentBarcodeForSignature = firstE;
+        currentTextForSignature = firstE;
         signatureBarcodeDisplay.innerText = firstE;
         setupCanvas();
         signaturePopup.style.display = 'flex';
@@ -900,13 +992,13 @@
   // SEND TO SHEETDB
   // ============================================
   async function sendBatchToSheets(status) {
-    if (scannedBarcodes.length === 0) return;
+    if (scannedTexts.length === 0) return;
     
     const timestamp = new Date().toISOString().slice(0,19).replace('T',' ');
     const batchId = 'BATCH-' + Date.now().toString(36).toUpperCase();
     
-    const records = scannedBarcodes.map(barcode => ({
-      tracking_id: barcode,
+    const records = scannedTexts.map(text => ({
+      tracking_id: text,
       status: status,
       timestamp: timestamp,
       latitude: currentLat || '',
@@ -933,7 +1025,7 @@
       
       if (response.ok) {
         alert(`✅ SUCCESS!\n${records.length} records sent to Google Sheets\nBatch ID: ${batchId}`);
-        scannedBarcodes = [];
+        scannedTexts = [];
         renderScannedList();
         batchStatusBlock.style.display = 'none';
         batchStatusSelect.value = '';
@@ -956,7 +1048,6 @@
   // INIT
   renderScannedList();
   setupCanvas();
-  // default mode ABC active
   setActiveMode('abc');
 })();
 </script>
