@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>UEXS Package Tracking</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Courier New', monospace;
+        }
+
+        body {
+            background: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+            border: 2px solid #b8b8bb;
+        }
+
+        /* Header */
+        .header {
+            background: #e6e6e9;
+            padding: 20px;
+            border-bottom: 2px solid #c9c9cc;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a1a;
+            letter-spacing: 1px;
+        }
+
+        .header .subtitle {
+            font-size: 14px;
+            color: #4a4a55;
+            margin-top: 5px;
+        }
+
+        /* Search Box */
+        .search-section {
+            padding: 25px;
+            background: #ffffff;
+            border-bottom: 2px solid #e6e6e9;
+        }
+
+        .search-label {
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #2d2d35;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 250px;
+            padding: 15px;
+            font-size: 18px;
+            font-family: 'Courier New', monospace;
+            border: 2px solid #b8b8bb;
+            border-radius: 8px;
+            background: #f8f8fa;
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #4a90e2;
+            background: white;
+        }
+
+        .search-btn {
+            padding: 15px 30px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid #2d6a30;
+            box-shadow: 0 2px 0 #1d4a20;
+        }
+
+        .search-btn:active {
+            transform: translateY(2px);
+            box-shadow: none;
+        }
+
+        .search-btn:disabled {
+            background: #cccccc;
+            border-color: #999999;
+            cursor: not-allowed;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #e6e6e9;
+            border-top: 5px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Error Message */
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 8px;
+            border: 2px solid #ef9a9a;
+            text-align: center;
+            font-weight: 700;
+            display: none;
+        }
+
+        /* Results */
+        .results {
+            padding: 0 20px 20px 20px;
+            display: none;
+        }
+
+        /* Package Header */
+        .package-header {
+            background: #2d2d35;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .tracking-number {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            word-break: break-all;
+        }
+
+        .current-status {
+            display: inline-block;
+            background: #4CAF50;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            margin-top: 10px;
+            font-size: 16px;
+        }
+
+        .delivered-status {
+            background: #2196F3;
+        }
+
+        /* Info Cards */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-card {
+            background: #f8f8fa;
+            border: 2px solid #b8b8bb;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #5a5a66;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .info-value {
+            font-size: 18px;
+            font-weight: 700;
+            margin-top: 5px;
+            color: #1a1a1a;
+            word-break: break-word;
+        }
+
+        /* Timeline */
+        .timeline {
+            margin-top: 30px;
+        }
+
+        .timeline-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #c9c9cc;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 20px;
+            padding: 15px;
+            border-left: 4px solid #4CAF50;
+            background: #f8f8fa;
+            margin-bottom: 10px;
+            border-radius: 0 8px 8px 0;
+            position: relative;
+        }
+
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .timeline-time {
+            min-width: 160px;
+            font-weight: 700;
+            color: #2d2d35;
+        }
+
+        .timeline-content {
+            flex: 1;
+        }
+
+        .timeline-status {
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 5px;
+            color: #1a1a1a;
+        }
+
+        .timeline-location {
+            color: #5a5a66;
+            font-size: 14px;
+        }
+
+        .timeline-coords {
+            font-size: 12px;
+            color: #888894;
+            margin-top: 3px;
+        }
+
+        /* Signature */
+        .signature-section {
+            margin-top: 20px;
+            background: #f0f4f8;
+            border: 2px solid #b8b8bb;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .signature-title {
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .signature-image {
+            max-width: 100%;
+            border: 2px solid white;
+            background: white;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .signature-text {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            background: white;
+            padding: 10px;
+            border: 1px dashed #b8b8bb;
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        /* Map Placeholder */
+        .map-placeholder {
+            height: 200px;
+            background: #e6e6e9;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+            border: 2px solid #b8b8bb;
+            color: #4a4a55;
+            font-weight: 700;
+        }
+
+        /* No Results */
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #888894;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #6a6a76;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        /* Example tracking */
+        .example-hint {
+            text-align: center;
+            margin-top: 10px;
+            color: #888894;
+            font-size: 14px;
+        }
+
+        .example-hint span {
+            background: #e6e6e9;
+            padding: 3px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        .example-hint span:hover {
+            background: #d2d2d8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📦 UEXS TRACKING</h1>
+            <div class="subtitle">Universal Express Shipping • Real-time Package Tracking</div>
+        </div>
+
+        <div class="search-section">
+            <div class="search-label">ENTER TRACKING NUMBER</div>
+            <div class="search-box">
+                <input type="text" class="search-input" id="trackingInput" placeholder="e.g., E12345678" autocomplete="off">
+                <button class="search-btn" id="trackBtn">TRACK PACKAGE</button>
+            </div>
+            <div class="example-hint">
+                Try: <span onclick="loadExample('E12345678')">E12345678</span> or <span onclick="loadExample('E87654321')">E87654321</span>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <div style="margin-top: 15px; font-weight: 700;">Fetching tracking data...</div>
+        </div>
+
+        <div class="error-message" id="errorMessage">
+            ❌ Tracking number not found. Please check and try again.
+        </div>
+
+        <div class="results" id="results">
+            <!-- Results will be populated here -->
+        </div>
+    </div>
+
+    <div class="footer">
+        UEXS Tracking System • Data updates in real-time • Need help? Contact support@uexs.com
+    </div>
+
+    <script>
+        // Your published Google Sheets CSV URL
+        const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQbF4JZKOu10PPQjX4oX5xxAlwA6RVQhEMx2G159LJ34kd129gtGZ5xs7NF5LaDMaf-l3-ezw6KOR9Q/pub?gid=0&single=true&output=csv';
+
+        let trackingData = [];
+
+        // Load and parse CSV on page load
+        async function loadTrackingData() {
+            try {
+                const response = await fetch(SHEET_CSV_URL);
+                const csvText = await response.text();
+                
+                // Parse CSV
+                const rows = csvText.split('\n').map(row => row.split(','));
+                const headers = rows[0].map(h => h.replace(/"/g, '').trim());
+                
+                trackingData = rows.slice(1).map(row => {
+                    const obj = {};
+                    headers.forEach((header, index) => {
+                        let value = row[index] || '';
+                        value = value.replace(/^"|"$/g, '').trim();
+                        obj[header] = value;
+                    });
+                    return obj;
+                }).filter(item => item.tracking_id && item.tracking_id !== '');
+                
+                console.log('Loaded', trackingData.length, 'tracking records');
+                
+            } catch (error) {
+                console.error('Error loading tracking data:', error);
+                document.getElementById('errorMessage').style.display = 'block';
+                document.getElementById('errorMessage').textContent = '❌ Error loading tracking database. Please try again later.';
+            }
+        }
+
+        // Search for tracking number
+        function searchTracking(trackingId) {
+            if (!trackingId) return [];
+            
+            // Case-insensitive search
+            return trackingData.filter(item => 
+                item.tracking_id && item.tracking_id.toUpperCase() === trackingId.toUpperCase()
+            ).sort((a, b) => {
+                // Sort by timestamp descending (newest first)
+                return new Date(b.timestamp) - new Date(a.timestamp);
+            });
+        }
+
+        // Format timestamp nicely
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return 'N/A';
+            try {
+                const date = new Date(timestamp);
+                return date.toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+            } catch {
+                return timestamp;
+            }
+        }
+
+        // Get status color
+        function getStatusColor(status) {
+            if (!status) return '#888894';
+            if (status.includes('DELIVERED')) return '#4CAF50';
+            if (status.includes('Out For Delivery')) return '#FF9800';
+            if (status.includes('In Transit')) return '#2196F3';
+            if (status.includes('Departed')) return '#9C27B0';
+            if (status.includes('Arrived')) return '#009688';
+            return '#607D8B';
+        }
+
+        // Render tracking results
+        function renderResults(records) {
+            const resultsDiv = document.getElementById('results');
+            
+            if (!records || records.length === 0) {
+                resultsDiv.innerHTML = '<div class="no-results">🔍 No tracking records found for this number</div>';
+                resultsDiv.style.display = 'block';
+                return;
+            }
+
+            const latest = records[0]; // Most recent
+            const isDelivered = latest.status && latest.status.includes('DELIVERED');
+
+            // Get unique locations for map
+            const locations = records.filter(r => r.latitude && r.longitude).map(r => ({
+                lat: r.latitude,
+                lng: r.longitude,
+                status: r.status,
+                timestamp: r.timestamp
+            }));
+
+            let html = `
+                <div class="package-header">
+                    <div class="tracking-number">#${latest.tracking_id}</div>
+                    <div class="current-status ${isDelivered ? 'delivered-status' : ''}">${latest.status || 'Status Unknown'}</div>
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-card">
+                        <div class="info-label">Last Updated</div>
+                        <div class="info-value">${formatTimestamp(latest.timestamp)}</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label">Current Location</div>
+                        <div class="info-value">${latest.city || 'Unknown'}, ${latest.state || ''}</div>
+                        ${latest.zip_code ? `<div style="font-size:12px; color:#666;">${latest.zip_code}</div>` : ''}
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label">Batch ID</div>
+                        <div class="info-value">${latest.batch_id || 'N/A'}</div>
+                    </div>
+                </div>
+            `;
+
+            // Timeline
+            html += `
+                <div class="timeline">
+                    <div class="timeline-title">📋 Tracking History</div>
+            `;
+
+            records.forEach((record, index) => {
+                const statusColor = getStatusColor(record.status);
+                html += `
+                    <div class="timeline-item" style="border-left-color: ${statusColor};">
+                        <div class="timeline-time">${formatTimestamp(record.timestamp)}</div>
+                        <div class="timeline-content">
+                            <div class="timeline-status">${record.status || 'Status Update'}</div>
+                            <div class="timeline-location">
+                                ${record.city || ''}${record.city && record.state ? ', ' : ''}${record.state || ''}
+                                ${record.zip_code ? ` ${record.zip_code}` : ''}
+                            </div>
+                            <div class="timeline-coords">
+                                ${record.latitude && record.longitude ? 
+                                    `📍 ${record.latitude}, ${record.longitude}` : 
+                                    '📍 Location not recorded'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+
+            // Signature section if delivered and has signature
+            if (isDelivered && latest.signature_text) {
+                html += `
+                    <div class="signature-section">
+                        <div class="signature-title">✍️ Delivery Signature</div>
+                        <div class="signature-text">"${latest.signature_text}"</div>
+                        <div style="font-size:12px; color:#666; margin-top:5px;">
+                            Signed at ${formatTimestamp(latest.timestamp)}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Map placeholder (you can integrate with Google Maps API)
+            if (locations.length > 0) {
+                html += `
+                    <div class="map-placeholder">
+                        🗺️ Map view with ${locations.length} location points<br>
+                        <small style="margin-top:5px;">(Google Maps integration available)</small>
+                    </div>
+                `;
+            }
+
+            resultsDiv.innerHTML = html;
+            resultsDiv.style.display = 'block';
+        }
+
+        // Main track function
+        async function trackPackage() {
+            const input = document.getElementById('trackingInput');
+            const trackingId = input.value.trim();
+            
+            if (!trackingId) {
+                alert('Please enter a tracking number');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('results').style.display = 'none';
+
+            // Make sure data is loaded
+            if (trackingData.length === 0) {
+                await loadTrackingData();
+            }
+
+            // Hide loading
+            document.getElementById('loading').style.display = 'none';
+
+            // Search and display
+            const records = searchTracking(trackingId);
+            
+            if (records.length > 0) {
+                renderResults(records);
+            } else {
+                document.getElementById('errorMessage').style.display = 'block';
+                document.getElementById('results').style.display = 'none';
+            }
+        }
+
+        // Load example tracking number
+        function loadExample(trackingId) {
+            document.getElementById('trackingInput').value = trackingId;
+            trackPackage();
+        }
+
+        // Event listeners
+        document.getElementById('trackBtn').addEventListener('click', trackPackage);
+        document.getElementById('trackingInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') trackPackage();
+        });
+
+        // Pre-load data
+        loadTrackingData();
+
+        // Demo: show sample on load
+        window.addEventListener('load', () => {
+            // Try to load an example after data is ready
+            setTimeout(() => {
+                if (trackingData.length > 0) {
+                    const firstTracking = trackingData[0]?.tracking_id;
+                    if (firstTracking) {
+                        document.getElementById('trackingInput').placeholder = `e.g., ${firstTracking}`;
+                    }
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
